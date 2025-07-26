@@ -1,0 +1,60 @@
+spring:
+  # 激活本地环境（仅本地开发时生效）
+  profiles:
+    active: local  # 改为local，优先加载application-local.yml
+
+  data:
+    redis:
+      database: 0
+      host: 127.0.0.1
+      port: 6379
+
+  #修改最大文件上传大小
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      enabled: true  # 显式启用
+  application:
+    name: chan-picture-backend
+  main:
+    allow-circular-references: true
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/chan_picture
+    username: root
+    password: 123456
+
+server:
+  port: 8100
+  servlet:
+    context-path: /api
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# springdoc-openapi
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.guochang.chanpicturebackend.controller
+
+# knife4j
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
