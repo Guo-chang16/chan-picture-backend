@@ -16,10 +16,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
-* @author 31179
-* @description 针对表【picture(图片)】的数据库操作Service
-* @createDate 2025-07-21 17:25:33
-*/
+ * @author 31179
+ * @description 针对表【picture(图片)】的数据库操作Service
+ * @createDate 2025-07-21 17:25:33
+ */
 public interface PictureService extends IService<Picture> {
 
     /**
@@ -29,6 +29,7 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 获取查询封装类
+     *
      * @param pictureQueryRequest
      * @return
      */
@@ -44,7 +45,7 @@ public interface PictureService extends IService<Picture> {
     /**
      * 审核图片
      */
-    void doPictureReview(PictureReviewRequest pictureReviewRequest,User loginUser);
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
 
     void fillReviewParams(Picture picture, User loginUser);
 
@@ -60,5 +61,11 @@ public interface PictureService extends IService<Picture> {
             PictureUploadByBatchRequest pictureUploadByBatchRequest,
             User loginUser
     );
+
+    void checkPictureAuth(User loginUser, Picture picture);
+
+    void deletePicture(long pictureId, User loginUser);
+
+    void clearPictureFile(Picture oldPicture);
 
 }

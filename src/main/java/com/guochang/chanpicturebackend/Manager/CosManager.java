@@ -86,6 +86,12 @@ public class CosManager {
         return cosClient.putObject(putObjectRequest);
     }
 
-
+    /**
+     * 删除对象
+     *
+     * @param key 唯一键
+     */
+    public void deleteObject(String key) {
+        cosClient.deleteObject(cosClientConfig.getBucket(), key);}
 
 }
