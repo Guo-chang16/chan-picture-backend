@@ -9,6 +9,11 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.guochang.chanpicturebackend.Manager.upload.UrlPictureUploadImpl;
 import com.guochang.chanpicturebackend.annotation.AuthCheck;
+import com.guochang.chanpicturebackend.api.aliyunai.Api.AliyunAiApi;
+import com.guochang.chanpicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
+import com.guochang.chanpicturebackend.api.aliyunai.model.GetOutPaintingTaskResponse;
+import com.guochang.chanpicturebackend.api.imagesearch.ImageSearchApiFacade;
+import com.guochang.chanpicturebackend.api.imagesearch.model.ImageSearchResult;
 import com.guochang.chanpicturebackend.common.BaseResponse;
 import com.guochang.chanpicturebackend.common.DeleteRequest;
 import com.guochang.chanpicturebackend.common.ErrorCode;
@@ -56,6 +61,9 @@ public class PictureController {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private AliyunAiApi aliyunAiApi;
 
     private final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
@@ -302,6 +310,49 @@ public class PictureController {
         User loginUser = userService.getLoginUser(request);
         Integer uploadedPicture = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
         return Result.success(uploadedPicture);
+    }
+
+    /**
+     * 以图搜图
+     */
+    @PostMapping("/search/picture")
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+        ThrowUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAMS_ERROR);
+        Long pictureId = searchPictureByPictureRequest.getPictureId();
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        Picture oldPicture = pictureService.getById(pictureId);
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(oldPicture.getUrl());
+        return Result.success(resultList);
+    }
+
+    /**
+     * 批量编辑图片
+     */
+    @PostMapping("/edit/batch")
+    public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
+        return Result.success(true);
+    }
+
+    /**
+     * 创建ai扩图任务
+     */
+    @PostMapping("/out_painting/create")
+    public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(@RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(createPictureOutPaintingTaskRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        CreateOutPaintingTaskResponse paintingTask = pictureService.createPaintingTask(createPictureOutPaintingTaskRequest, loginUser);
+        return Result.success(paintingTask);
+    }
+
+    @GetMapping("/out_painting/get")
+    public BaseResponse<GetOutPaintingTaskResponse> getPictureOutPaintingTask(String taskId) {
+        ThrowUtils.throwIf(taskId == null, ErrorCode.PARAMS_ERROR);
+        GetOutPaintingTaskResponse outPaintingTask = aliyunAiApi.getOutPaintingTask(taskId);
+        return Result.success(outPaintingTask);
     }
 
 }

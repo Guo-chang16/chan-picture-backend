@@ -4,10 +4,9 @@ package com.guochang.chanpicturebackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.guochang.chanpicturebackend.model.dto.picture.PictureQueryRequest;
-import com.guochang.chanpicturebackend.model.dto.picture.PictureReviewRequest;
-import com.guochang.chanpicturebackend.model.dto.picture.PictureUploadByBatchRequest;
-import com.guochang.chanpicturebackend.model.dto.picture.PictureUploadRequest;
+import com.guochang.chanpicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
+import com.guochang.chanpicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
+import com.guochang.chanpicturebackend.model.dto.picture.*;
 import com.guochang.chanpicturebackend.model.entity.Picture;
 import com.guochang.chanpicturebackend.model.entity.User;
 import com.guochang.chanpicturebackend.model.vo.PictureVO;
@@ -67,5 +66,12 @@ public interface PictureService extends IService<Picture> {
     void deletePicture(long pictureId, User loginUser);
 
     void clearPictureFile(Picture oldPicture);
+
+    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
+
+    /**
+     * 创建扩图任务
+     */
+    CreateOutPaintingTaskResponse createPaintingTask(CreatePictureOutPaintingTaskRequest picturePaintingRequest, User loginUser);
 
 }

@@ -1,5 +1,6 @@
 package com.guochang.chanpicturebackend.service.impl;
 
+
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -9,32 +10,28 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
 import com.guochang.chanpicturebackend.Manager.CosManager;
 import com.guochang.chanpicturebackend.Manager.upload.FilePictureUploadImpl;
 import com.guochang.chanpicturebackend.Manager.upload.PictureUploadTemplate;
 import com.guochang.chanpicturebackend.Manager.upload.UrlPictureUploadImpl;
+import com.guochang.chanpicturebackend.api.aliyunai.Api.AliyunAiApi;
+import com.guochang.chanpicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
+import com.guochang.chanpicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.guochang.chanpicturebackend.common.ErrorCode;
-import com.guochang.chanpicturebackend.constant.UserConstant;
 import com.guochang.chanpicturebackend.exception.BusinessException;
 import com.guochang.chanpicturebackend.exception.ThrowUtils;
-import com.guochang.chanpicturebackend.model.dto.picture.PictureQueryRequest;
-import com.guochang.chanpicturebackend.model.dto.picture.PictureReviewRequest;
-import com.guochang.chanpicturebackend.model.dto.picture.PictureUploadByBatchRequest;
-import com.guochang.chanpicturebackend.model.dto.picture.PictureUploadRequest;
+import com.guochang.chanpicturebackend.mapper.PictureMapper;
 import com.guochang.chanpicturebackend.model.dto.file.UploadPictureResult;
+import com.guochang.chanpicturebackend.model.dto.picture.*;
 import com.guochang.chanpicturebackend.model.entity.Picture;
 import com.guochang.chanpicturebackend.model.entity.Space;
 import com.guochang.chanpicturebackend.model.entity.User;
 import com.guochang.chanpicturebackend.model.enums.PictureReviewStatusEnum;
-import com.guochang.chanpicturebackend.model.enums.UserRoleEnum;
 import com.guochang.chanpicturebackend.model.vo.PictureVO;
 import com.guochang.chanpicturebackend.model.vo.UserVO;
 import com.guochang.chanpicturebackend.service.PictureService;
-import com.guochang.chanpicturebackend.mapper.PictureMapper;
 import com.guochang.chanpicturebackend.service.SpaceService;
 import com.guochang.chanpicturebackend.service.UserService;
-import jakarta.annotation.Priority;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -46,12 +43,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -86,6 +79,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private TransactionTemplate transactionTemplate;
 
+    @Resource
+    private AliyunAiApi aliyunAiApi;
 
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -494,6 +489,69 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     @Override
+    public void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser) {
+        // 校验参数
+        List<Long> pictureIdList = pictureEditByBatchRequest.getPictureIdList();
+        Long spaceId = pictureEditByBatchRequest.getSpaceId();
+        String category = pictureEditByBatchRequest.getCategory();
+        List<String> tags = pictureEditByBatchRequest.getTags();
+        ThrowUtils.throwIf(pictureIdList == null || pictureIdList.isEmpty(), ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(spaceId == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        //校验空间权限
+        Space space = spaceService.getById(spaceId);
+        ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
+        ThrowUtils.throwIf(!space.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR);
+
+        //查询指定图片（仅返回需要的字段）
+        List<Picture> pictureList = this.lambdaQuery()
+                .select(Picture::getId, Picture::getSpaceId)
+                .in(Picture::getId, pictureIdList)
+                .eq(Picture::getSpaceId, spaceId)
+                .list();
+        if (pictureList.isEmpty()) {
+            return;
+        }
+        //更新分类和标签
+        pictureList.forEach(picture -> {
+            picture.setCategory(category);
+            picture.setTags(JSONUtil.toJsonStr(tags));
+        });
+
+        //批量重命名
+        String nameRule = pictureEditByBatchRequest.getNameRule();
+        if (StrUtil.isNotBlank(nameRule)) {
+            for (int i = 0; i < pictureList.size(); i++) {
+                Picture picture = pictureList.get(i);
+                String newName = nameRule.replace("{index}", String.valueOf(i + 1));
+                picture.setName(newName);
+            }
+        }
+
+        //更新数据库
+        boolean result = this.updateBatchById(pictureList);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+    }
+
+    @Override
+    public CreateOutPaintingTaskResponse createPaintingTask(CreatePictureOutPaintingTaskRequest picturePaintingRequest, User loginUser) {
+        ThrowUtils.throwIf(picturePaintingRequest == null, ErrorCode.PARAMS_ERROR);
+        Long pictureId = picturePaintingRequest.getPictureId();
+        Picture picture = Optional.ofNullable(this.getById(pictureId))
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_ERROR));
+
+        checkPictureAuth(loginUser, picture);
+        //构造请求参数
+        CreateOutPaintingTaskRequest createOutPaintingTaskRequest = new CreateOutPaintingTaskRequest();
+        CreateOutPaintingTaskRequest.Input input=new CreateOutPaintingTaskRequest.Input();
+        input.setImageUrl(picture.getUrl());
+        createOutPaintingTaskRequest.setInput(input);
+        createOutPaintingTaskRequest.setParameters(picturePaintingRequest.getParameters());
+        //创建任务
+        return aliyunAiApi.createPaintingTask(createOutPaintingTaskRequest);
+    }
+
+    @Override
     public void deletePicture(long pictureId, User loginUser) {
         ThrowUtils.throwIf(pictureId <= 0, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
@@ -519,8 +577,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 异步清理文件
         this.clearPictureFile(oldPicture);
     }
-
-
 }
 
 
