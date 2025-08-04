@@ -7,12 +7,17 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.guochang.chanpicturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
 import com.guochang.chanpicturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.guochang.chanpicturebackend.model.dto.picture.*;
+import com.guochang.chanpicturebackend.model.dto.space.analyze.SpaceSizeAnalyzeRequest;
 import com.guochang.chanpicturebackend.model.entity.Picture;
+import com.guochang.chanpicturebackend.model.entity.Space;
 import com.guochang.chanpicturebackend.model.entity.User;
 import com.guochang.chanpicturebackend.model.vo.PictureVO;
 import com.guochang.chanpicturebackend.model.vo.UserVO;
+import com.guochang.chanpicturebackend.model.vo.space.analyze.SpaceSizeAnalyzeResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * @author 31179
@@ -73,5 +78,7 @@ public interface PictureService extends IService<Picture> {
      * 创建扩图任务
      */
     CreateOutPaintingTaskResponse createPaintingTask(CreatePictureOutPaintingTaskRequest picturePaintingRequest, User loginUser);
+
+    void checkSpaceAuth(User loginUser, Space space);
 
 }

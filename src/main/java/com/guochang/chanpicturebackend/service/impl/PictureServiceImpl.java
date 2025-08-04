@@ -577,6 +577,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 异步清理文件
         this.clearPictureFile(oldPicture);
     }
+
+    public void checkSpaceAuth(User loginUser, Space space) {
+        if (space == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        if (!space.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+    }
+
 }
 
 
