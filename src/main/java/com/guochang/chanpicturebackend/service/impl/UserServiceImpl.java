@@ -5,6 +5,7 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.guochang.chanpicturebackend.Manager.auth.StpKit;
 import com.guochang.chanpicturebackend.common.ErrorCode;
 import com.guochang.chanpicturebackend.exception.BusinessException;
 import com.guochang.chanpicturebackend.exception.ThrowUtils;
@@ -111,6 +112,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         // 3. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, user);
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(USER_LOGIN_STATE, user);
         return this.getLoginUserVO(user);
     }
 
