@@ -71,15 +71,6 @@ public class CosManager {
         compressRule.setRule("imageMogr2/format/webp");
         rules.add(compressRule);
 
-        /*// 缩略图处理
-        PicOperations.Rule thumbnailRule = new PicOperations.Rule();
-        thumbnailRule.setBucket(cosClientConfig.getBucket());
-        String thumbnailKey = FileUtil.mainName(key) + "_thumbnail." + FileUtil.getSuffix(key);
-        thumbnailRule.setFileId(thumbnailKey);
-        // 缩放规则 /thumbnail/<Width>x<Height>>（如果大于原图宽高，则不处理）
-        thumbnailRule.setRule(String.format("imageMogr2/thumbnail/%sx%s>", 128, 128));
-        rules.add(thumbnailRule);*/
-
         // 构造处理参数
         picOperations.setRules(rules);
         putObjectRequest.setPicOperations(picOperations);

@@ -361,7 +361,7 @@ public class PictureController {
     /**
      * 创建ai扩图任务
      */
-    @PostMapping("/out_painting/create")
+    @PostMapping("/out_painting/create_task")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(@RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(createPictureOutPaintingTaskRequest == null, ErrorCode.PARAMS_ERROR);
@@ -370,7 +370,7 @@ public class PictureController {
         return Result.success(paintingTask);
     }
 
-    @GetMapping("/out_painting/get")
+    @GetMapping("/out_painting/get_task")
     public BaseResponse<GetOutPaintingTaskResponse> getPictureOutPaintingTask(String taskId) {
         ThrowUtils.throwIf(taskId == null, ErrorCode.PARAMS_ERROR);
         GetOutPaintingTaskResponse outPaintingTask = aliyunAiApi.getOutPaintingTask(taskId);

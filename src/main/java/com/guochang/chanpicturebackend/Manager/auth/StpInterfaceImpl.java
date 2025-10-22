@@ -84,7 +84,6 @@ public class StpInterfaceImpl implements StpInterface {
     /**
      * 返回一个账号所拥有的权限码集合
      */
-    @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
         // 判断 loginType，仅对类型为 "space" 进行权限校验
         if (!StpKit.SPACE_TYPE.equals(loginType)) {
@@ -184,6 +183,7 @@ public class StpInterfaceImpl implements StpInterface {
             return spaceUserAuthManager.getPermissionsByRole(spaceUser.getSpaceRole());
         }
     }
+
 
     /**
      * 返回一个账号所拥有的角色标识集合 (权限与角色可分开校验)
