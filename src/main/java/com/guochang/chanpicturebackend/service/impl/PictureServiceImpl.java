@@ -571,7 +571,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                     .setSql("totalSize = totalSize - " + oldPicture.getPicSize())
                     .setSql("totalCount = totalCount - 1")
                     .update();
-            ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "额度更新失败");
+            //ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "额度更新失败");
             return true;
         });
         // 异步清理文件

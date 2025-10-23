@@ -30,12 +30,6 @@ public class SpaceAnalyzeController {
     @Resource
     private UserService userService;
 
-    @Resource
-    private SpaceService spaceService;
-
-    @Resource
-    private PictureService pictureService;
-
     /**
      * 空间使用情况分析
      * @param spaceUsageAnalyzeRequest
@@ -45,7 +39,7 @@ public class SpaceAnalyzeController {
     public BaseResponse<SpaceUsageAnalyzeResponse> spaceUsageAnalyze(@RequestBody SpaceUsageAnalyzeRequest spaceUsageAnalyzeRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(spaceUsageAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
-        SpaceUsageAnalyzeResponse response = spaceAnalyzeService.spaceUsageAnalyze(spaceUsageAnalyzeRequest, loginUser);
+        SpaceUsageAnalyzeResponse response = spaceAnalyzeService.getSpaceUsageAnalyze(spaceUsageAnalyzeRequest, loginUser);
         ThrowUtils.throwIf(response == null, ErrorCode.SYSTEM_ERROR);
         return Result.success(response);
     }
@@ -54,7 +48,7 @@ public class SpaceAnalyzeController {
     public BaseResponse<List<SpaceCategoryAnalyzeResponse>> spaceCategoryAnalyze(@RequestBody SpaceCategoryAnalyzeRequest spaceCategoryAnalyzeRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(spaceCategoryAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
-        List<SpaceCategoryAnalyzeResponse> spaceCategoryAnalyzeResponses = spaceAnalyzeService.spaceCategoryAnalyze(spaceCategoryAnalyzeRequest, loginUser);
+        List<SpaceCategoryAnalyzeResponse> spaceCategoryAnalyzeResponses = spaceAnalyzeService.getSpaceCategoryAnalyze(spaceCategoryAnalyzeRequest, loginUser);
         return Result.success(spaceCategoryAnalyzeResponses);
     }
 
@@ -62,7 +56,7 @@ public class SpaceAnalyzeController {
     public BaseResponse<List<SpaceTagAnalyzeResponse>> getSpaceTagAnalyze(@RequestBody SpaceTagAnalyzeRequest spaceTagAnalyzeRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(spaceTagAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
-        List<SpaceTagAnalyzeResponse> resultList = spaceAnalyzeService.spaceTagAnalyze(spaceTagAnalyzeRequest, loginUser);
+        List<SpaceTagAnalyzeResponse> resultList = spaceAnalyzeService.getSpaceTagAnalyze(spaceTagAnalyzeRequest, loginUser);
         return Result.success(resultList);
     }
 
