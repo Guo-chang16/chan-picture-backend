@@ -91,21 +91,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             Space space = spaceService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "个人空间不存在");
 
-            //权限校验，仅本人和管理员可以上传个人空间
-            if (space.getUserId().equals(loginUser.getId()) || userService.isAdmin(loginUser)) {
-                throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-            }
-
-            if(space.getTotalCount()>=space.getTotalCount()){
+            if(space.getTotalCount()>=space.getMaxCount()){
                 throw new BusinessException(ErrorCode.OPERATION_ERROR,"空间条数不足");
             }
 
-            if(space.getTotalSize()>=space.getTotalSize()){
+            if(space.getTotalSize()>=space.getMaxSize()){
                 throw new BusinessException(ErrorCode.OPERATION_ERROR,"空间大小不足");
             }
 
         }
-
 
         //判断是新增还是更新
         Long pictureId = null;
@@ -374,7 +368,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             picture.setReviewTime(new Date());
         } else {
             // 非管理员，创建或编辑都要改为待审核
-            picture.setReviewStatus(PictureReviewStatusEnum.REVIEWING.getValue());
+//            picture.setReviewStatus(PictureReviewStatusEnum.REVIEWING.getValue());
         }
     }
 
@@ -435,7 +429,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             pictureUploadRequest.setFileUrl(fileUrl);
             pictureUploadRequest.setPicName(namePrefix + (uploadCount + 1));
             try {
-
                 PictureVO pictureVO = pictureService.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
                 uploadCount++;
                 log.info("图片上传成功，id={}", pictureVO.getId());
@@ -451,7 +444,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
 
-    @Override
+/*    @Override
     public void checkPictureAuth(User loginUser, Picture picture) {
         Long spaceId = picture.getSpaceId();
         if (spaceId == null) {
@@ -465,7 +458,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
             }
         }
-    }
+    }*/
 
     @Async
     @Override
@@ -481,11 +474,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         // 删除图片
         cosManager.deleteObject(pictureUrl);
-        // 删除缩略图
-//        String thumbnailUrl = oldPicture.getThumbnailUrl();
-//        if (StrUtil.isNotBlank(thumbnailUrl)) {
-//            cosManager.deleteObject(thumbnailUrl);
-//        }
     }
 
     @Override
@@ -558,19 +546,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 判断是否存在
         Picture oldPicture = this.getById(pictureId);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        // 校验权限，已经改为使用注解鉴权
-        //checkPictureAuth(loginUser, oldPicture);
         // 开启事务
         transactionTemplate.execute(status -> {
             // 操作数据库
             boolean result = this.removeById(pictureId);
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
             // 更新空间的使用额度，释放额度
-            boolean update = spaceService.lambdaUpdate()
+            /*boolean update = spaceService.lambdaUpdate()
                     .eq(Space::getId, oldPicture.getSpaceId())
                     .setSql("totalSize = totalSize - " + oldPicture.getPicSize())
                     .setSql("totalCount = totalCount - 1")
-                    .update();
+                    .update();*/
             //ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "额度更新失败");
             return true;
         });
@@ -578,14 +564,14 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         this.clearPictureFile(oldPicture);
     }
 
-    public void checkSpaceAuth(User loginUser, Space space) {
+/*    public void checkSpaceAuth(User loginUser, Space space) {
         if (space == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
         if (!space.getUserId().equals(loginUser.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-    }
+    }*/
 
 }
 

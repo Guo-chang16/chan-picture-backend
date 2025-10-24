@@ -26,10 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -123,8 +120,8 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
     @Override
     public List<SpaceUserVO> getSpaceUserVOList(List<SpaceUser> spaceUserList) {
         // 判断输入列表是否为空
-        if (CollUtil.isEmpty(spaceUserList)) {
-            return Collections.emptyList();
+        if (ObjUtil.isNull(spaceUserList)) {
+            return new ArrayList<>();
         }
         // 对象列表 => 封装对象列表
         List<SpaceUserVO> spaceUserVOList = spaceUserList.stream().map(SpaceUserVO::objToVo).collect(Collectors.toList());

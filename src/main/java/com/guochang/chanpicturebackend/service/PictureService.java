@@ -66,7 +66,7 @@ public interface PictureService extends IService<Picture> {
             User loginUser
     );
 
-    void checkPictureAuth(User loginUser, Picture picture);
+    //void checkPictureAuth(User loginUser, Picture picture);
 
     void deletePicture(long pictureId, User loginUser);
 
@@ -79,6 +79,6 @@ public interface PictureService extends IService<Picture> {
      */
     CreateOutPaintingTaskResponse createPaintingTask(CreatePictureOutPaintingTaskRequest picturePaintingRequest, User loginUser);
 
-    void checkSpaceAuth(User loginUser, Space space);
+//    void checkSpaceAuth(User loginUser, Space space);
 
 }

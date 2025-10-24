@@ -42,8 +42,6 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>
     @Resource
     private PictureService pictureService;
 
-    @Resource
-    private SpaceAnalyzeService spaceAnalyzeService;
 
     public void checkSpaceAnalyzeAuth(SpaceAnalyzeRequest spaceAnalyzeRequest, User loginUser) {
         // 检查权限
@@ -57,7 +55,7 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>
             Space space = spaceService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
             //权限校验
-            spaceService.checkSpaceAuth(loginUser, space);
+//            spaceService.checkSpaceAuth(loginUser, space);
         }
     }
 
@@ -106,10 +104,10 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>
             spaceUsageAnalyzeResponse.setUsedSize(usedSize);
             spaceUsageAnalyzeResponse.setUsedCount(usedCount);
             // 公共图库无上限、无比例
-            spaceUsageAnalyzeResponse.setMaxSize(null);
-            spaceUsageAnalyzeResponse.setSizeUsageRatio(null);
-            spaceUsageAnalyzeResponse.setMaxCount(null);
-            spaceUsageAnalyzeResponse.setCountUsageRatio(null);
+            spaceUsageAnalyzeResponse.setMaxSize(1024 * 1024 * 1024L);
+            spaceUsageAnalyzeResponse.setSizeUsageRatio(NumberUtil.round(usedSize * 100.0 / (1024 * 1024 * 1024L), 2).doubleValue());
+            spaceUsageAnalyzeResponse.setMaxCount(1000L);
+            spaceUsageAnalyzeResponse.setCountUsageRatio(NumberUtil.round(usedCount * 100.0 / 1000, 2).doubleValue());
             return spaceUsageAnalyzeResponse;
         } else {
             // 查询指定空间
@@ -120,7 +118,7 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
 
             // 权限校验：仅空间所有者或管理员可访问
-            spaceService.checkSpaceAuth(loginUser, space);
+            //spaceService.checkSpaceAuth(loginUser, space);
 
             // 构造返回结果
             SpaceUsageAnalyzeResponse response = new SpaceUsageAnalyzeResponse();
@@ -143,7 +141,7 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>
         ThrowUtils.throwIf(spaceCategoryAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
         QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
         fillAnalyzeQueryWrapper(spaceCategoryAnalyzeRequest, queryWrapper);
-        queryWrapper.select("category", "count(*) as count", "sum(pic_size) as total_size");
+        queryWrapper.select("category", "count(*) as count", "sum(picSize) as total_size");
         queryWrapper.groupBy("category");
         List<SpaceCategoryAnalyzeResponse> categoryList = pictureService.getBaseMapper().selectMaps(queryWrapper)
                 .stream()
@@ -163,8 +161,8 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>
         checkSpaceAnalyzeAuth(spaceTagAnalyzeRequest, loginUser);
         QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
         fillAnalyzeQueryWrapper(spaceTagAnalyzeRequest, queryWrapper);
-        queryWrapper.select();
-        queryWrapper.groupBy("tags");
+        queryWrapper.select("tags");
+        //queryWrapper.groupBy();
         List<Object> tagsJsonList = pictureService.getBaseMapper().selectObjs(queryWrapper);
         List<String> collect = tagsJsonList.stream()
                 .filter(ObjectUtil::isNotNull)

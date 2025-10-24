@@ -62,8 +62,8 @@ public class RequestWrapper extends HttpServletRequestWrapper {
         return new BufferedReader(new InputStreamReader(this.getInputStream()));
     }
 
-    public String getBody() {
-        return this.body;
-    }
+//    public String getBody() {
+//        return this.body;
+//    }
 
 }

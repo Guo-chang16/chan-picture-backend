@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.guochang.chanpicturebackend.Manager.auth.SpaceUserAuthManager;
 import com.guochang.chanpicturebackend.common.ErrorCode;
 import com.guochang.chanpicturebackend.exception.BusinessException;
 import com.guochang.chanpicturebackend.exception.ThrowUtils;
@@ -26,14 +27,12 @@ import com.guochang.chanpicturebackend.service.SpaceUserService;
 import com.guochang.chanpicturebackend.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +41,7 @@ import java.util.stream.Collectors;
  * @createDate 2025-07-26 21:54:21
  */
 @Service
+@Slf4j
 public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         implements SpaceService {
 
@@ -50,6 +50,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
     @Override
     public SpaceVO getSpaceVO(Space space, HttpServletRequest request) {
@@ -62,6 +65,17 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             UserVO userVO = userService.getUserVO(user);
             spaceVO.setUser(userVO);
         }
+
+        try {
+            User loginUser = userService.getLoginUser(request);
+            List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+            spaceVO.setPermissionList(permissionList);
+            log.info("SpaceService中设置的权限列表: {}", permissionList);
+        } catch (Exception e) {
+            log.warn("设置权限列表失败", e);
+            spaceVO.setPermissionList(new ArrayList<>());
+        }
+
         return spaceVO;
     }
 
@@ -130,6 +144,10 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Override
     public long addSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
+        // 在此处将实体类和 DTO 进行转换
+        Space space = new Space();
+        BeanUtils.copyProperties(spaceAddRequest, space);
+
 
         // 默认值
         if (StrUtil.isBlank(spaceAddRequest.getSpaceName())) {
@@ -144,9 +162,6 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             spaceAddRequest.setSpaceType(SpaceTypeEnum.PRIVATE.getValue());
         }
 
-// 在此处将实体类和 DTO 进行转换
-        Space space = new Space();
-        BeanUtils.copyProperties(spaceAddRequest, space);
 
         // 填充数据
         this.fillSpaceBySpaceLevel(space);
@@ -172,7 +187,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 // 写入数据库
                 boolean result = this.save(space);
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-// 如果是团队空间，关联新增团队成员记录
+                // 如果是团队空间，关联新增团队成员记录
                 if (SpaceTypeEnum.TEAM.getValue() == spaceAddRequest.getSpaceType()) {
                     SpaceUser spaceUser = new SpaceUser();
                     spaceUser.setSpaceId(space.getId());
@@ -181,7 +196,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                     result = spaceUserService.save(spaceUser);
                     ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
-// 返回新写入的数据 id
+                // 返回新写入的数据 id
                 return space.getId();
 
             });
@@ -243,13 +258,13 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         }
     }
 
-    @Override
+   /* @Override
     public void checkSpaceAuth(User loginUser, Space space) {
         // 仅本人或管理员可编辑
         if (!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-    }
+    }*/
 }
 
 
